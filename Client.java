@@ -18,7 +18,8 @@ public class Client extends JFrame implements ActionListener {
     private Socket socket;
     private BufferedReader reader;
     private PrintWriter writer;
-    private final Timer pomodoro = new Timer();
+    private Timer pomodoro = new Timer();
+    private boolean timerRunning = false;
     JLabel timerLabel = new JLabel("25:00");
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -234,10 +235,35 @@ public class Client extends JFrame implements ActionListener {
 
         // Button
         JButton startButton = new JButton("Start Work Session");
+        JButton breakButton = new JButton("Start Break Session");
+        JButton pauseButton = new JButton("Pause");
         startButton.addActionListener(e -> {
-            startTimer(25 * 60000);
+            startTimer(25 * 60 * 1000);
+            pauseButton.setText("Pause");
         });
+        breakButton.addActionListener(e -> {
+            startTimer(5 * 60 * 1000);
+            pauseButton.setText("Pause");
+        });
+        pauseButton.addActionListener(e -> {
+            if (pauseButton.getText().equals("Pause")) {
+                pauseTimer();
+                pauseButton.setText("Unpause");
+            } else if (pauseButton.getText().equals("Unpause")) {
+                unpauseTimer();
+                pauseButton.setText("Pause");
+            }
+
+        });
+        startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        startButton.setSize(20, 8);
+        breakButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        breakButton.setSize(20, 8);
+        pauseButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        pauseButton.setSize(20, 8);
         pomodoro.add(startButton);
+        pomodoro.add(breakButton);
+        pomodoro.add(pauseButton);
 
 
         Container content = this.getContentPane();
@@ -249,23 +275,51 @@ public class Client extends JFrame implements ActionListener {
         this.setVisible(true);
     }
 
+    public void pauseTimer() {
+        if (timerRunning) {
+            timerRunning = false;
+            pomodoro.cancel();
+        }
+    }
+
+    public void unpauseTimer() {
+        if (!timerRunning) {
+            String[] time = timerLabel.getText().split(":");
+            long minutes = Long.parseLong(time[0]) * 60 * 1000;
+            long seconds = Long.parseLong(time[1]) * 1000;
+            startTimer(minutes + seconds);
+            timerRunning = true;
+        }
+    }
+
     public void startTimer(long duration) {
+        if (timerRunning) {
+            return;
+        }
+        timerRunning = true;
         AtomicLong timeRemaining = new AtomicLong(duration);
+        pomodoro = new Timer();
         TimerTask start = new TimerTask() {
             @Override
             public void run() {
                 if (timeRemaining.get() > 0) {
                     long minutes = TimeUnit.MILLISECONDS.toMinutes(timeRemaining.get());
                     long seconds = (TimeUnit.MILLISECONDS.toSeconds(timeRemaining.get()) % 60);
-                    if (seconds < 10) {
-                        timerLabel.setText(minutes + ":0" + seconds);
-                    } else {
-                        timerLabel.setText(minutes + ":" + seconds);
-                    }
+                    SwingUtilities.invokeLater(() -> {
+                        if (seconds < 10) {
+                            timerLabel.setText(minutes + ":0" + seconds);
+                        } else {
+                            timerLabel.setText(minutes + ":" + seconds);
+                        }
+                    });
 
                     timeRemaining.addAndGet(-1000);
                 } else {
                     pomodoro.cancel();
+                    timerRunning = false;
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
+                            null, "Time's up!", "Timer Complete", JOptionPane.INFORMATION_MESSAGE
+                    ));
                 }
             }
         };

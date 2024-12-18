@@ -2,10 +2,12 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.ServerSocket;
@@ -23,10 +25,10 @@ public class Server implements Serializable, Runnable {
 
     public Server(Socket socket) {
         this.socket = socket;
-        this.users = new ArrayList<>();
+        this.users = readUsers();
     }
 
-    public static ArrayList<User> readUsers() {
+    public ArrayList<User> readUsers() {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("users.txt"))) {
             return (ArrayList<User>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
@@ -34,7 +36,16 @@ public class Server implements Serializable, Runnable {
         }
     }
 
+    public void writeUsers() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("users.txt"))) {
+            oos.writeObject(users);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public User findUser(String username) {
+        users = readUsers();
         for (User user : users) {
             if (user.getUsername().equals(username)) {
                 return user;
@@ -44,6 +55,7 @@ public class Server implements Serializable, Runnable {
     }
 
     public boolean login(String username, String password) {
+        users = readUsers();
         for (User user : users) {
             if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
                 return true;
@@ -53,13 +65,13 @@ public class Server implements Serializable, Runnable {
     }
 
     public String createUser(String username, String password) {
-        for (User user : users) {
-            if (user.getUsername().equals(username)) {
-                return "User already exists";
-            }
+        if (findUser(username) != null) {
+            return "User already exists";
+        } else {
+            users.add(new User(username, password));
+            writeUsers();
+            return "User created!";
         }
-        users.add(new User(username, password));
-        return "User created!";
     }
 
     @Override
@@ -99,6 +111,7 @@ public class Server implements Serializable, Runnable {
                         String task = reader.readLine();
                         if (!task.equals("null")) {
                             user.addTask(task);
+                            writeUsers();
                         }
                     } else if (option.equals("Remove Task")) {
                         User user = findUser(reader.readLine());
@@ -106,11 +119,11 @@ public class Server implements Serializable, Runnable {
                         writer.write(String.valueOf(tasks.size()));
                         writer.println();
                         writer.flush();
-
                         if (!(tasks.isEmpty())) {
                             try {
                                 int indexToRemove = Integer.parseInt(reader.readLine()) - 1;
                                 user.removeTask(indexToRemove);
+                                writeUsers();
                             } catch (NumberFormatException _) {}
                         }
                     }
