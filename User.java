@@ -34,6 +34,10 @@ public class User implements Serializable {
         tasks.remove(task);
     }
 
+    public void removeTask(int index) {
+        tasks.remove(index);
+    }
+
     public ArrayList<String> getTasks() {
         return tasks;
     }

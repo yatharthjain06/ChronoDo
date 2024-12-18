@@ -100,7 +100,19 @@ public class Server implements Serializable, Runnable {
                         if (!task.equals("null")) {
                             user.addTask(task);
                         }
+                    } else if (option.equals("Remove Task")) {
+                        User user = findUser(reader.readLine());
+                        ArrayList<String> tasks = user.getTasks();
+                        writer.write(String.valueOf(tasks.size()));
+                        writer.println();
+                        writer.flush();
 
+                        if (!(tasks.isEmpty())) {
+                            try {
+                                int indexToRemove = Integer.parseInt(reader.readLine()) - 1;
+                                user.removeTask(indexToRemove);
+                            } catch (NumberFormatException _) {}
+                        }
                     }
                 }
             }

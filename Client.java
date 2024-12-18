@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Client extends JFrame implements ActionListener {
@@ -197,6 +198,9 @@ public class Client extends JFrame implements ActionListener {
             addTask(username);
         });
         JButton removeTask = new JButton("Remove Task");
+        removeTask.addActionListener(e -> {
+            removeTask(username);
+        });
         buttonPanel.add(addTask);
         buttonPanel.add(removeTask);
         tasks.add(buttonPanel, BorderLayout.SOUTH); // Add buttons at the bottom
@@ -227,6 +231,38 @@ public class Client extends JFrame implements ActionListener {
         mainMenu(username);
     }
 
+    private void removeTask(String username) {
+        try {
+            writer.println("Remove Task");
+            writer.println(username);
+
+
+            int size = Integer.parseInt(reader.readLine());
+            if (size == 0) {
+                JOptionPane.showMessageDialog(this, "No tasks to remove",
+                        "Remove Task", JOptionPane.ERROR_MESSAGE);
+            } else {
+                int[] options = new int[size];
+                for (int i = 0; i < options.length; i++) {
+                    options[i] = i + 1;
+                }
+                Integer[] dropdownOptions = new Integer[size];
+                for (int i = 0; i < size; i++) {
+                    dropdownOptions[i] = options[i];
+                }
+                Integer selectedOption = (Integer) JOptionPane.showInputDialog(null,
+                        "Select a task to remove:", "Remove Task", JOptionPane.QUESTION_MESSAGE, null,
+                        dropdownOptions, dropdownOptions[0]
+                );
+                writer.println(selectedOption);
+                this.getContentPane().removeAll();
+                mainMenu(username);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private JTextArea viewTasks(String username) {
         JTextArea messageFeedArea = null;
         try {
@@ -235,6 +271,7 @@ public class Client extends JFrame implements ActionListener {
 
             messageFeedArea = new JTextArea();
             messageFeedArea.setEditable(false);
+            messageFeedArea.setFont(new Font("Calibri", Font.BOLD, 30));
 
             String tasks = "";
             int i = 1;
