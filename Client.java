@@ -9,12 +9,17 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Client extends JFrame implements ActionListener {
     private Socket socket;
     private BufferedReader reader;
     private PrintWriter writer;
-    private String thisUserName;
+    private final Timer pomodoro = new Timer();
+    JLabel timerLabel = new JLabel("25:00");
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
 
@@ -211,6 +216,28 @@ public class Client extends JFrame implements ActionListener {
 
         JPanel pomodoro = new JPanel();
         tabbedPane.addTab("Pomodoro", pomodoro);
+        pomodoro.setLayout(new BoxLayout(pomodoro, BoxLayout.Y_AXIS));
+
+        // Image
+        JLabel label = new JLabel();
+        ImageIcon icon = new ImageIcon("Pomodoro-Timer.jpg");
+        Image scaledImage = icon.getImage().getScaledInstance(500, 500, Image.SCALE_SMOOTH);
+        label.setIcon(new ImageIcon(scaledImage));
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        label.setAlignmentY(Component.CENTER_ALIGNMENT);
+        pomodoro.add(label);
+
+        // Timer
+        timerLabel.setFont(new Font("Arial", Font.BOLD, 100));
+        timerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        pomodoro.add(timerLabel);
+
+        // Button
+        JButton startButton = new JButton("Start Work Session");
+        startButton.addActionListener(e -> {
+            startTimer(25 * 60000);
+        });
+        pomodoro.add(startButton);
 
 
         Container content = this.getContentPane();
@@ -220,6 +247,29 @@ public class Client extends JFrame implements ActionListener {
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         this.setVisible(true);
+    }
+
+    public void startTimer(long duration) {
+        AtomicLong timeRemaining = new AtomicLong(duration);
+        TimerTask start = new TimerTask() {
+            @Override
+            public void run() {
+                if (timeRemaining.get() > 0) {
+                    long minutes = TimeUnit.MILLISECONDS.toMinutes(timeRemaining.get());
+                    long seconds = (TimeUnit.MILLISECONDS.toSeconds(timeRemaining.get()) % 60);
+                    if (seconds < 10) {
+                        timerLabel.setText(minutes + ":0" + seconds);
+                    } else {
+                        timerLabel.setText(minutes + ":" + seconds);
+                    }
+
+                    timeRemaining.addAndGet(-1000);
+                } else {
+                    pomodoro.cancel();
+                }
+            }
+        };
+        pomodoro.scheduleAtFixedRate(start, 0, 1000);
     }
 
     private void addTask(String username) {

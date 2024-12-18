@@ -9,6 +9,6 @@ public class Main {
 //        System.out.println("Enter password");
 //        String password = scanner.nextLine();
         User user = new User("username", "password");
-        user.startTimer(2000);
+        //user.startTimer(2000);
     }
 }
