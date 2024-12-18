@@ -7,15 +7,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class Client extends JFrame implements ActionListener {
     private Socket socket;
     private BufferedReader reader;
     private PrintWriter writer;
     private String thisUserName;
+    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
-
-    JLabel welcomeText = new JLabel();
 
     public Client() {
         // Connect to server
@@ -33,52 +33,148 @@ public class Client extends JFrame implements ActionListener {
         }
 
         setTitle("Log in");
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         setSize(screenSize.width, screenSize.height);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        getContentPane().add(welcomeText);
         homeScreen();
     }
 
     private void homeScreen() {
-        JPanel homePanel = new JPanel(new GridLayout(3, 1,0,30));
-        JPanel emptyPanel = new JPanel();
-        emptyPanel.setBackground(new Color(100, 100, 100));
-        emptyPanel.setPreferredSize(new Dimension(0, 500));
-        homePanel.add(emptyPanel);
-        homePanel.setBackground(new Color(140, 211, 255));
+        JPanel homeScreen = new JPanel(new GridLayout(3, 0));
+        JLabel welcome = new JLabel("Welcome to ChronoDo!" + "\nWould you like to log in or " +
+                "create an account?", SwingConstants.CENTER);
+        welcome.setFont(new Font("Calibri", Font.BOLD, 39));
+        welcome.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
+        homeScreen.add(welcome);
 
-        // Add welcome message
-        JLabel welcomeLabel = new JLabel("ChronoDo", SwingConstants.CENTER);
-        welcomeLabel.setFont(new Font("Calibri", Font.BOLD, 39));
-        welcomeLabel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
-        homePanel.add(welcomeLabel);
-
-        JLabel loginOrCreate = new JLabel("Login or create account", SwingConstants.RIGHT);
-        loginOrCreate.setFont(new Font("Calibri", Font.BOLD, 39));
-        loginOrCreate.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
-        homePanel.add(loginOrCreate);
-
-
-        // Add a proceed button
-        JButton proceedButton = new JButton("Proceed to Login");
-        proceedButton.setFont(new Font("Calibri", Font.PLAIN, 16));
-        proceedButton.addActionListener(e -> {
-            getContentPane().remove(homePanel);
+        JButton login = new JButton("Log in");
+        homeScreen.add(login);
+        login.addActionListener(e -> {
+            getContentPane().remove(homeScreen);
+            homeScreen.setVisible(false);
+            login();
         });
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(proceedButton);
-        buttonPanel.setBackground(new Color(140, 211, 255));
-        homePanel.add(buttonPanel);
+        JButton create = new JButton("Create account");
+        homeScreen.add(create);
+        create.addActionListener(e -> {
+            getContentPane().remove(homeScreen);
+            homeScreen.setVisible(false);
+            createAccount();
+        });
 
-        // Display the home screen
-        getContentPane().add(homePanel);
+        homeScreen.setBackground(new Color(216, 219, 222));
+        getContentPane().add(homeScreen);
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
+    private void login() {
+        writer.println("Login");
 
+        // Create a JDialog
+        JDialog dialog = new JDialog((Frame) null, "Login", true);
+        dialog.setSize(300, 200);
+        dialog.setLayout(new BorderLayout(10, 10));
+
+        // Login Panel
+        JPanel loginPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        loginPanel.add(new JLabel("Username:"));
+        JTextField loginUsernameField = new JTextField();
+        loginPanel.add(loginUsernameField);
+
+        loginPanel.add(new JLabel("Password:"));
+        JPasswordField loginPasswordField = new JPasswordField();
+        loginPanel.add(loginPasswordField);
+
+        // Button Panel
+        JPanel buttonPanel = new JPanel();
+        JButton loginButton = new JButton("Login");
+        loginButton.addActionListener(e -> {
+            handleLogin(loginUsernameField.getText(), new String(loginPasswordField.getPassword()));
+            dialog.dispose();
+        });
+        buttonPanel.add(loginButton);
+
+        // Add panels to the dialog
+        dialog.add(loginPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+    }
+
+    private void handleLogin(String username, String password) {
+        try {
+            writer.println("Login");
+            writer.println(username);
+            writer.println(password);
+
+            boolean condition = Boolean.parseBoolean(reader.readLine());
+            if (condition) {
+                JOptionPane.showMessageDialog(this, "Welcome, " + username, "Logged In", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Incorrect username or password", "Error", JOptionPane.ERROR_MESSAGE);
+                homeScreen();
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during login", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void createAccount() {
+        writer.println("Create Account");
+
+        // Create a JDialog
+        JDialog dialog = new JDialog((Frame) null, "Create Account", true);
+        dialog.setSize(300, 200);
+        dialog.setLayout(new BorderLayout(10, 10));
+
+        // Create Account Panel
+        JPanel createAccountPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        createAccountPanel.add(new JLabel("Enter a username:"));
+        JTextField createAccountUsernameField = new JTextField();
+        createAccountPanel.add(createAccountUsernameField);
+
+        createAccountPanel.add(new JLabel("Enter a password:"));
+        JPasswordField createAccountPasswordField = new JPasswordField();
+        createAccountPanel.add(createAccountPasswordField);
+
+        // Button Panel
+        JPanel buttonPanel = new JPanel();
+        JButton createAccountButton = new JButton("Create Account");
+        createAccountButton.addActionListener(e -> {
+            handleCreateAccount(createAccountUsernameField.getText(), new String(createAccountPasswordField.getPassword()));
+            dialog.dispose();
+        });
+        buttonPanel.add(createAccountButton);
+
+        // Add panels to the dialog
+        dialog.add(createAccountPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+    }
+
+    private void handleCreateAccount(String username, String password) {
+        try {
+            writer.println("Create Account");
+            writer.println(username);
+            writer.println(password);
+
+            String condition = reader.readLine();
+            if (condition.equals("User created!")) {
+                JOptionPane.showMessageDialog(this, "Welcome, " + username,
+                        condition, JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Try again with a different username",
+                        condition, JOptionPane.ERROR_MESSAGE);
+                homeScreen();
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during account creation", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {

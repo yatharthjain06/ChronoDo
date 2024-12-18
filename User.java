@@ -2,6 +2,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class User implements Serializable {
     private String username;
@@ -32,21 +34,31 @@ public class User implements Serializable {
         tasks.remove(task);
     }
 
-    public void startTimer() {
+    public ArrayList<String> getTasks() {
+        return tasks;
+    }
+
+    public void startTimer(long duration) {
+        AtomicLong timeRemaining = new AtomicLong(duration);
         TimerTask start = new TimerTask() {
-            int duration = 25 * 60 * 1000;
             @Override
             public void run() {
-                //System.out.println(duration);
-                int minutes = duration / 1000 / 60;
-                int seconds = duration / 1000;
-                System.out.println(minutes + ":" + seconds);
+                if (timeRemaining.get() > 0) {
+                    long minutes = TimeUnit.MILLISECONDS.toMinutes(timeRemaining.get());
+                    long seconds = (TimeUnit.MILLISECONDS.toSeconds(timeRemaining.get()) % 60);
+                    if (seconds < 10) {
+                        System.out.println(minutes + ":0" + seconds);
+                    } else {
+                        System.out.println(minutes + ":" + seconds);
+                    }
 
-
-                duration--;
+                    timeRemaining.addAndGet(-1000);
+                } else {
+                    System.out.println("Timer finished!");
+                    pomodoro.cancel();
+                }
             }
         };
-
         pomodoro.scheduleAtFixedRate(start, 0, 1000);
     }
 

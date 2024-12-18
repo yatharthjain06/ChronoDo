@@ -4,7 +4,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -32,10 +34,49 @@ public class Server implements Serializable, Runnable {
         }
     }
 
+    public boolean login(String username, String password) {
+        for (User user : users) {
+            if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String createUser(String username, String password) {
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                return "User already exists";
+            }
+        }
+        users.add(new User(username, password));
+        return "User created!";
+    }
+
     @Override
     public void run() {
-        while (socket.isConnected()) {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter writer = new PrintWriter(socket.getOutputStream());
 
+            while (socket.isConnected()) {
+                String option = reader.readLine();
+                if (option.equals("Login")) {
+                    String username = reader.readLine();
+                    String password = reader.readLine();
+                    writer.write(String.valueOf(login(username, password)));
+                    writer.println();
+                    writer.flush();
+                } else if (option.equals("Create Account")) {
+                    String username = reader.readLine();
+                    String password = reader.readLine();
+                    writer.write(createUser(username, password));
+                    writer.println();
+                    writer.flush();
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
