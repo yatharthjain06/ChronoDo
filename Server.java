@@ -34,6 +34,15 @@ public class Server implements Serializable, Runnable {
         }
     }
 
+    public User findUser(String username) {
+        for (User user : users) {
+            if (user.getUsername().equals(username)) {
+                return user;
+            }
+        }
+        return null;
+    }
+
     public boolean login(String username, String password) {
         for (User user : users) {
             if (user.getUsername().equals(username) && user.getPassword().equals(password)) {
@@ -60,19 +69,39 @@ public class Server implements Serializable, Runnable {
             PrintWriter writer = new PrintWriter(socket.getOutputStream());
 
             while (socket.isConnected()) {
-                String option = reader.readLine();
-                if (option.equals("Login")) {
-                    String username = reader.readLine();
-                    String password = reader.readLine();
-                    writer.write(String.valueOf(login(username, password)));
-                    writer.println();
-                    writer.flush();
-                } else if (option.equals("Create Account")) {
-                    String username = reader.readLine();
-                    String password = reader.readLine();
-                    writer.write(createUser(username, password));
-                    writer.println();
-                    writer.flush();
+                if (reader.ready()) {
+                    String option = reader.readLine();
+                    if (option.equals("Login")) {
+                        String username = reader.readLine();
+                        String password = reader.readLine();
+                        writer.write(String.valueOf(login(username, password)));
+                        writer.println();
+                        writer.flush();
+                    } else if (option.equals("Create Account")) {
+                        String username = reader.readLine();
+                        String password = reader.readLine();
+                        writer.write(createUser(username, password));
+                        writer.println();
+                        writer.flush();
+                    } else if (option.equals("View Tasks")) {
+                        User user = findUser(reader.readLine());
+                        ArrayList<String> tasks = user.getTasks();
+                        for (String task : tasks) {
+                            writer.write(task);
+                            writer.println();
+                            writer.flush();
+                        }
+                        writer.write("END");
+                        writer.println();
+                        writer.flush();
+                    } else if (option.equals("Add Task")) {
+                        User user = findUser(reader.readLine());
+                        String task = reader.readLine();
+                        if (!task.equals("null")) {
+                            user.addTask(task);
+                        }
+
+                    }
                 }
             }
         } catch (Exception e) {

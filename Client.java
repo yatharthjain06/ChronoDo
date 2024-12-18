@@ -49,16 +49,16 @@ public class Client extends JFrame implements ActionListener {
         JButton login = new JButton("Log in");
         homeScreen.add(login);
         login.addActionListener(e -> {
-            getContentPane().remove(homeScreen);
-            homeScreen.setVisible(false);
+            getContentPane().removeAll();
+            this.setVisible(false);
             login();
         });
 
         JButton create = new JButton("Create account");
         homeScreen.add(create);
         create.addActionListener(e -> {
-            getContentPane().remove(homeScreen);
-            homeScreen.setVisible(false);
+            getContentPane().removeAll();
+            this.setVisible(false);
             createAccount();
         });
 
@@ -69,7 +69,7 @@ public class Client extends JFrame implements ActionListener {
     }
 
     private void login() {
-        writer.println("Login");
+//        writer.println("Login");
 
         // Create a JDialog
         JDialog dialog = new JDialog((Frame) null, "Login", true);
@@ -112,6 +112,7 @@ public class Client extends JFrame implements ActionListener {
             boolean condition = Boolean.parseBoolean(reader.readLine());
             if (condition) {
                 JOptionPane.showMessageDialog(this, "Welcome, " + username, "Logged In", JOptionPane.INFORMATION_MESSAGE);
+                mainMenu(username);
             } else {
                 JOptionPane.showMessageDialog(this, "Incorrect username or password", "Error", JOptionPane.ERROR_MESSAGE);
                 homeScreen();
@@ -158,7 +159,6 @@ public class Client extends JFrame implements ActionListener {
 
     private void handleCreateAccount(String username, String password) {
         try {
-            writer.println("Create Account");
             writer.println(username);
             writer.println(password);
 
@@ -166,6 +166,7 @@ public class Client extends JFrame implements ActionListener {
             if (condition.equals("User created!")) {
                 JOptionPane.showMessageDialog(this, "Welcome, " + username,
                         condition, JOptionPane.INFORMATION_MESSAGE);
+                mainMenu(username);
             } else {
                 JOptionPane.showMessageDialog(this, "Try again with a different username",
                         condition, JOptionPane.ERROR_MESSAGE);
@@ -174,6 +175,77 @@ public class Client extends JFrame implements ActionListener {
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Error during account creation", "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void mainMenu(String username) {
+        JTabbedPane tabbedPane = new JTabbedPane();
+
+        // Tasks Panel
+        JPanel tasks = new JPanel(new BorderLayout());
+        JTextArea taskList = viewTasks(username);
+        taskList.setLineWrap(true); // Optional: Enables line wrapping for readability
+        taskList.setWrapStyleWord(true);
+
+        // ScrollPane for the task list
+        JScrollPane scrollPane = new JScrollPane(taskList); // Scrollable feed
+        tasks.add(scrollPane, BorderLayout.CENTER); // Add scrollPane to tasks panel
+
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // Buttons panel
+        JButton addTask = new JButton("Add Task");
+        addTask.addActionListener(e -> {
+            addTask(username);
+        });
+        JButton removeTask = new JButton("Remove Task");
+        buttonPanel.add(addTask);
+        buttonPanel.add(removeTask);
+        tasks.add(buttonPanel, BorderLayout.SOUTH); // Add buttons at the bottom
+
+        // Add panels to the tabbedPane
+        tabbedPane.addTab("To-Do", tasks);
+
+
+        JPanel pomodoro = new JPanel();
+        tabbedPane.addTab("Pomodoro", pomodoro);
+
+
+        Container content = this.getContentPane();
+        content.setLayout(new BorderLayout());
+        content.add(tabbedPane, BorderLayout.CENTER);
+
+        this.setLocationRelativeTo(null);
+        this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        this.setVisible(true);
+    }
+
+    private void addTask(String username) {
+        writer.println("Add Task");
+        writer.println(username);
+        String task = JOptionPane.showInputDialog(null, "Enter task");
+        writer.println(task);
+        this.getContentPane().removeAll();
+        mainMenu(username);
+    }
+
+    private JTextArea viewTasks(String username) {
+        JTextArea messageFeedArea = null;
+        try {
+            writer.println("View Tasks");
+            writer.println(username);
+
+            messageFeedArea = new JTextArea();
+            messageFeedArea.setEditable(false);
+
+            String tasks = "";
+            int i = 1;
+            while (!((tasks = reader.readLine()).equals("END"))) {
+                messageFeedArea.append(i + ". " + tasks + "\n");
+                i++;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return messageFeedArea;
     }
 
     public static void main(String[] args) {
